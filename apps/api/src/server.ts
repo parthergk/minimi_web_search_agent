@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
+import { dbPlugin } from './plugins/db.js';
 import { healthRoutes } from './routes/health.js';
 
 export async function buildServer() {
@@ -8,6 +9,7 @@ export async function buildServer() {
     logger: true,
   });
 
+  await app.register(dbPlugin);
   await app.register(healthRoutes);
 
   return app;
