@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import { dbPlugin } from './plugins/db.js';
 import { healthRoutes } from './routes/health.js';
+import { userRoutes } from './routes/users.js';
 
 export async function buildServer() {
   const app = Fastify({
@@ -11,6 +12,7 @@ export async function buildServer() {
 
   await app.register(dbPlugin);
   await app.register(healthRoutes);
+  await app.register(userRoutes);
 
   return app;
 }
