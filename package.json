@@ -1,0 +1,27 @@
+{
+  "name": "minimi-web-search-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimi Web Search Agent monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev --workspace=@minimi/api\" \"npm run dev --workspace=@minimi/web\"",
+    "dev:api": "npm run dev --workspace=@minimi/api",
+    "dev:web": "npm run dev --workspace=@minimi/web",
+    "build:packages": "tsc -b packages/shared packages/db packages/agent",
+    "build": "npm run build:packages && npm run build --workspace=@minimi/api && npm run build --workspace=@minimi/web",
+    "typecheck": "tsc -b packages/shared packages/db packages/agent apps/api && npm run typecheck --workspace=@minimi/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
+
