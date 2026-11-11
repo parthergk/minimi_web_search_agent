@@ -13,7 +13,7 @@ export async function buildServer() {
   return app;
 }
 
-async function start() {
+const start = async () => {
   const app = await buildServer();
   const port = Number(process.env.PORT ?? 3001);
   const host = process.env.HOST ?? '0.0.0.0';
@@ -26,10 +26,4 @@ async function start() {
   }
 }
 
-const isMain =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
-
-if (isMain) {
-  start();
-}
+start();

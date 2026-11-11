@@ -12,15 +12,19 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
-    "typecheck": "tsc --noEmit"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@minimi/shared": "*",
-    "pg": "^8.14.1"
+    "dotenv": "^18.0.10",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.14.1",
+    "postgres": "^4.1.0"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.11"
+    "@types/pg": "^8.11.11",
+    "drizzle-kit": "^0.31.11"
   }
 }
-
