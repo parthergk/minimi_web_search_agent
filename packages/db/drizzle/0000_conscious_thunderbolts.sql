@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 CREATE TYPE "public"."message_role" AS ENUM('user', 'assistant', 'tool');--> statement-breakpoint
 CREATE TYPE "public"."claim_type" AS ENUM('pricing', 'feature', 'release', 'general');--> statement-breakpoint
 CREATE TYPE "public"."research_status" AS ENUM('queued', 'running', 'completed', 'failed');--> statement-breakpoint
@@ -81,4 +82,12 @@ CREATE INDEX "messages_conversation_id_idx" ON "messages" USING btree ("conversa
 CREATE INDEX "messages_created_at_idx" ON "messages" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "research_claims_run_idx" ON "research_claims" USING btree ("research_run_id");--> statement-breakpoint
 CREATE INDEX "research_runs_conversation_idx" ON "research_runs" USING btree ("conversation_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "research_sources_run_url_idx" ON "research_sources" USING btree ("research_run_id","url");
+CREATE UNIQUE INDEX "research_sources_run_url_idx" ON "research_sources" USING btree ("research_run_id","url");--> statement-breakpoint
+-- Vector similarity index
+CREATE INDEX IF NOT EXISTS message_embeddings_hnsw_idx
+ON message_embeddings
+USING hnsw (embedding vector_cosine_ops);--> statement-breakpoint
+-- Full-text search index
+CREATE INDEX IF NOT EXISTS messages_content_fts_idx
+ON messages
+USING GIN (to_tsvector('english', content));
