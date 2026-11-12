@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { runAgent } from "@minimi/agent";
 import { conversations, messages } from "@minimi/db";
 
 interface ChatConversationParams {
@@ -117,26 +118,55 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
         });
       }
 
-      // Load the last 20 messages and reverse into chronological order for LLM input
+      // Load the previous 20 messages and reverse into chronological order for LLM input
       const recentMessages = await app.db
         .select({
           role: messages.role,
           content: messages.content,
-          createdAt: messages.createdAt,
         })
         .from(messages)
-        .where(eq(messages.conversationId, conversationId))
+        .where(
+          and(
+            eq(messages.conversationId, conversationId),
+            ne(messages.id, userMessage.id)
+          )
+        )
         .orderBy(desc(messages.createdAt))
         .limit(20);
 
       const history = recentMessages.reverse();
 
-      // TODO: Call runAgent({ query: content, history }) from @minimi/agent
-      // and persist research_runs, research_sources, research_claims, and assistant message.
+      const agentResult = await runAgent({
+        query: content,
+        history,
+      });
+
+      const assistantMessage = await app.db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(messages)
+          .values({
+            conversationId,
+            role: "assistant",
+            content: agentResult.answer,
+            metadata:
+              agentResult.sources.length > 0
+                ? { sources: agentResult.sources }
+                : {},
+          })
+          .returning();
+
+        await tx
+          .update(conversations)
+          .set({ updatedAt: new Date() })
+          .where(eq(conversations.id, conversationId));
+
+        return inserted;
+      });
 
       return reply.code(201).send({
         userMessage,
-        history,
+        assistantMessage,
+        sources: agentResult.sources,
       });
     }
   );

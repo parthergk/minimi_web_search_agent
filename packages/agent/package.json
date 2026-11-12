@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@minimi/shared": "*"
+    "@minimi/shared": "*",
+    "openai": "^7.55.0"
   }
 }
-
