@@ -11,6 +11,11 @@ import {
 
 export { MINIMI_SYSTEM_PROMPT } from "./prompt.js";
 export {
+  EMBEDDING_MODEL,
+  createEmbedding,
+  createEmbeddings,
+} from "./embeddings.js";
+export {
   executeWebSearch,
   webSearchToolDefinition,
   type WebSearchArgs,
@@ -23,9 +28,18 @@ export interface AgentHistoryMessage {
   content: string;
 }
 
+export interface AgentMemoryItem {
+  role: "user" | "assistant" | "tool";
+  content: string;
+  createdAt: string;
+  source: "semantic" | "keyword" | "temporal";
+}
+
 export interface RunAgentInput {
   query: string;
   history: AgentHistoryMessage[];
+  memory?: AgentMemoryItem[];
+  currentDate?: string;
   openaiClient?: OpenAI;
   webSearch?: WebSearchExecutor;
 }
@@ -35,9 +49,32 @@ export interface RunAgentResult {
   sources: WebSearchResult[];
 }
 
+function buildSystemPrompt(
+  currentDate: string,
+  memory: AgentMemoryItem[] = []
+): string {
+  const parts = [
+    MINIMI_SYSTEM_PROMPT,
+    `Current date and time (UTC): ${currentDate}`,
+  ];
+
+  if (memory.length > 0) {
+    const formattedMemory = memory
+      .map((m) => `[${m.createdAt}] (${m.source}) ${m.role}: ${m.content}`)
+      .join("\n");
+    parts.push(
+      `Relevant past conversation memory (from earlier turns/sessions):\n${formattedMemory}`
+    );
+  }
+
+  return parts.join("\n\n");
+}
+
 export async function runAgent({
   query,
   history,
+  memory,
+  currentDate = new Date().toISOString(),
   openaiClient,
   webSearch,
 }: RunAgentInput): Promise<RunAgentResult> {
@@ -50,7 +87,7 @@ export async function runAgent({
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
   const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: MINIMI_SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt(currentDate, memory) },
     ...history
       .filter(
         (msg): msg is { role: "user" | "assistant"; content: string } =>

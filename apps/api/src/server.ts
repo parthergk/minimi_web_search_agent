@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import { dbPlugin } from './plugins/db.js';
 import { chatRoutes } from './routes/chat.js';
@@ -12,6 +13,9 @@ export async function buildServer() {
     logger: true,
   });
 
+  await app.register(cors, {
+    origin: process.env.CORS_ORIGIN ?? true,
+  });
   await app.register(dbPlugin);
   await app.register(healthRoutes);
   await app.register(userRoutes);

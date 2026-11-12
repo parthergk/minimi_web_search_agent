@@ -2,6 +2,10 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { runAgent } from "@minimi/agent";
 import { conversations, messages } from "@minimi/db";
+import {
+  retrieveMemory,
+  saveMessageEmbeddings,
+} from "../services/memory.js";
 
 interface ChatConversationParams {
   id: string;
@@ -121,6 +125,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
       // Load the previous 20 messages and reverse into chronological order for LLM input
       const recentMessages = await app.db
         .select({
+          id: messages.id,
           role: messages.role,
           content: messages.content,
         })
@@ -134,11 +139,26 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
         .orderBy(desc(messages.createdAt))
         .limit(20);
 
-      const history = recentMessages.reverse();
+      const history = recentMessages
+        .reverse()
+        .map(({ role, content: msgContent }) => ({
+          role,
+          content: msgContent,
+        }));
+
+      const memory = await retrieveMemory(app.db, {
+        userId,
+        query: content,
+        excludeMessageIds: [
+          userMessage.id,
+          ...recentMessages.map((msg) => msg.id),
+        ],
+      });
 
       const agentResult = await runAgent({
         query: content,
         history,
+        memory,
       });
 
       const assistantMessage = await app.db.transaction(async (tx) => {
@@ -162,6 +182,15 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
         return inserted;
       });
+
+      try {
+        await saveMessageEmbeddings(app.db, [
+          { messageId: userMessage.id, content },
+          { messageId: assistantMessage.id, content: agentResult.answer },
+        ]);
+      } catch (err) {
+        request.log.error(err, "Failed to save message embeddings");
+      }
 
       return reply.code(201).send({
         userMessage,
