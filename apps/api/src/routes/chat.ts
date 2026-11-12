@@ -1,27 +1,24 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { conversations, messages } from "@minimi/db";
 
-type MessageRole = "user" | "assistant" | "tool";
-
-interface MessageConversationParams {
+interface ChatConversationParams {
   id: string;
 }
 
-interface AddMessageBody {
+interface ChatBody {
   userId: string;
-  role: MessageRole;
   content: string;
   metadata?: Record<string, unknown>;
 }
 
-interface GetMessagesQuery {
+interface GetChatQuery {
   userId: string;
   limit?: number;
   offset?: number;
 }
 
-const addMessageSchema = {
+const chatPostSchema = {
   params: {
     type: "object",
     required: ["id"],
@@ -32,18 +29,17 @@ const addMessageSchema = {
   },
   body: {
     type: "object",
-    required: ["userId", "role", "content"],
+    required: ["userId", "content"],
     additionalProperties: false,
     properties: {
       userId: { type: "string", format: "uuid" },
-      role: { type: "string", enum: ["user", "assistant", "tool"] },
       content: { type: "string", minLength: 1 },
       metadata: { type: "object", additionalProperties: true },
     },
   },
 } as const;
 
-const getMessagesSchema = {
+const chatGetSchema = {
   params: {
     type: "object",
     required: ["id"],
@@ -64,16 +60,16 @@ const getMessagesSchema = {
   },
 } as const;
 
-export async function messageRoutes(app: FastifyInstance): Promise<void> {
+export async function chatRoutes(app: FastifyInstance): Promise<void> {
   app.post<{
-    Params: MessageConversationParams;
-    Body: AddMessageBody;
+    Params: ChatConversationParams;
+    Body: ChatBody;
   }>(
-    "/conversations/:id/messages",
-    { schema: addMessageSchema },
+    "/conversations/:id/chat",
+    { schema: chatPostSchema },
     async (request, reply) => {
       const { id: conversationId } = request.params;
-      const { userId, role, content, metadata } = request.body;
+      const { userId, content, metadata } = request.body;
 
       if (!content.trim()) {
         return reply.code(400).send({
@@ -81,7 +77,7 @@ export async function messageRoutes(app: FastifyInstance): Promise<void> {
         });
       }
 
-      const created = await app.db.transaction(async (tx) => {
+      const userMessage = await app.db.transaction(async (tx) => {
         const [existingConversation] = await tx
           .select({ id: conversations.id })
           .from(conversations)
@@ -101,7 +97,7 @@ export async function messageRoutes(app: FastifyInstance): Promise<void> {
           .insert(messages)
           .values({
             conversationId,
-            role,
+            role: "user",
             content,
             ...(metadata !== undefined ? { metadata } : {}),
           })
@@ -115,22 +111,42 @@ export async function messageRoutes(app: FastifyInstance): Promise<void> {
         return inserted;
       });
 
-      if (!created) {
+      if (!userMessage) {
         return reply.code(404).send({
           error: "Conversation not found",
         });
       }
 
-      return reply.code(201).send(created);
+      // Load the last 20 messages and reverse into chronological order for LLM input
+      const recentMessages = await app.db
+        .select({
+          role: messages.role,
+          content: messages.content,
+          createdAt: messages.createdAt,
+        })
+        .from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(desc(messages.createdAt))
+        .limit(20);
+
+      const history = recentMessages.reverse();
+
+      // TODO: Call runAgent({ query: content, history }) from @minimi/agent
+      // and persist research_runs, research_sources, research_claims, and assistant message.
+
+      return reply.code(201).send({
+        userMessage,
+        history,
+      });
     }
   );
 
   app.get<{
-    Params: MessageConversationParams;
-    Querystring: GetMessagesQuery;
+    Params: ChatConversationParams;
+    Querystring: GetChatQuery;
   }>(
-    "/conversations/:id/messages",
-    { schema: getMessagesSchema },
+    "/conversations/:id/chat",
+    { schema: chatGetSchema },
     async (request, reply) => {
       const { id: conversationId } = request.params;
       const { userId, limit = 100, offset = 0 } = request.query;

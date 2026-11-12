@@ -2,9 +2,9 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import { dbPlugin } from './plugins/db.js';
+import { chatRoutes } from './routes/chat.js';
 import { conversationRoutes } from './routes/conversations.js';
 import { healthRoutes } from './routes/health.js';
-import { messageRoutes } from './routes/messages.js';
 import { userRoutes } from './routes/users.js';
 
 export async function buildServer() {
@@ -16,7 +16,7 @@ export async function buildServer() {
   await app.register(healthRoutes);
   await app.register(userRoutes);
   await app.register(conversationRoutes);
-  await app.register(messageRoutes);
+  await app.register(chatRoutes);
 
   return app;
 }
