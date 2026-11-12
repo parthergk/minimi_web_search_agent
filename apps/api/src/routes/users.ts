@@ -4,7 +4,6 @@ import { users } from "@minimi/db";
 interface CreateUserBody {
   email: string;
   name?: string | null;
-  timezone?: string;
 }
 
 const createUserSchema = {
@@ -15,7 +14,6 @@ const createUserSchema = {
     properties: {
       email: { type: "string", format: "email", minLength: 1, maxLength: 255 },
       name: { type: ["string", "null"], maxLength: 255 },
-      timezone: { type: "string", minLength: 1, maxLength: 100 },
     },
   },
 } as const;
@@ -38,7 +36,6 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
           : request.body.name === null
             ? null
             : request.body.name.trim() || null;
-      const timezone = request.body.timezone?.trim();
 
       try {
         const [created] = await app.db
@@ -46,7 +43,6 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
           .values({
             email,
             ...(name !== undefined ? { name } : {}),
-            ...(timezone ? { timezone } : {}),
           })
           .returning();
 
