@@ -13,7 +13,8 @@
     "dev:web": "npm run dev --workspace=@minimi/web",
     "build:packages": "tsc -b packages/shared packages/agent",
     "build": "npm run build:packages && npm run build --workspace=@minimi/api && npm run build --workspace=@minimi/web",
-    "typecheck": "tsc -b packages/shared packages/agent apps/api && npm run typecheck --workspace=@minimi/web"
+    "typecheck": "tsc -b packages/shared packages/agent apps/api && npm run typecheck --workspace=@minimi/web",
+    "db:push": "npm run db:push --workspace=@minimi/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
