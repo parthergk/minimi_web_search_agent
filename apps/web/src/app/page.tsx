@@ -1,8 +1,21 @@
-export default function HomePage() {
-  return (
-    <main className="container">
-      <h1 className="title">Minimi Web Search Agent</h1>
-      <p className="subtitle">Frontend scaffold ready.</p>
-    </main>
-  );
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "../context/UserContext";
+
+export default function RootPage() {
+  const router = useRouter();
+  const { user, loading } = useUser();
+
+  useEffect(() => {
+    if (loading) return;
+    if (user) {
+      router.replace("/chat");
+    } else {
+      router.replace("/register");
+    }
+  }, [user, loading, router]);
+
+  return null;
 }

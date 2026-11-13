@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import { UserProvider } from "../context/UserContext";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Minimi Web Search Agent',
-  description: 'AI-powered web search agent monorepo',
+  title: "Minimi",
+  description: "Minimal conversational AI with web search",
 };
 
 export default function RootLayout({
@@ -13,8 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <UserProvider>{children}</UserProvider>
+      </body>
     </html>
   );
 }
-
