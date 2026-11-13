@@ -1,12 +1,7 @@
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
-import { dbPlugin } from './plugins/db.js';
 import { chatRoutes } from './routes/chat.js';
-import { conversationRoutes } from './routes/conversations.js';
 import { healthRoutes } from './routes/health.js';
-import { userRoutes } from './routes/users.js';
 
 export async function buildServer() {
   const app = Fastify({
@@ -16,10 +11,7 @@ export async function buildServer() {
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN ?? true,
   });
-  await app.register(dbPlugin);
   await app.register(healthRoutes);
-  await app.register(userRoutes);
-  await app.register(conversationRoutes);
   await app.register(chatRoutes);
 
   return app;
@@ -36,6 +28,6 @@ const start = async () => {
     app.log.error(err);
     process.exit(1);
   }
-}
+};
 
 start();

@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { ChatMessage } from "../lib/api";
-import { MessageItem } from "./MessageItem";
+import { MessageItem, type DisplayMessage } from "./MessageItem";
 
 interface MessageListProps {
-  messages: ChatMessage[];
-  loading: boolean;
+  messages: DisplayMessage[];
   sending: boolean;
 }
 
-export function MessageList({ messages, loading, sending }: MessageListProps) {
+export function MessageList({ messages, sending }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -19,14 +17,10 @@ export function MessageList({ messages, loading, sending }: MessageListProps) {
 
   return (
     <div className="messages-scroll">
-      {loading ? (
+      {messages.length === 0 ? (
         <div className="empty-state">
-          <p>Loading messages...</p>
-        </div>
-      ) : messages.length === 0 ? (
-        <div className="empty-state">
-          <h2>Ask Minimi</h2>
-          <p>Conversational AI with web search and cross-session memory.</p>
+          <h2>Minimi</h2>
+          <p>Conversational AI with real-time web search.</p>
         </div>
       ) : (
         <div className="messages-inner">
@@ -37,7 +31,7 @@ export function MessageList({ messages, loading, sending }: MessageListProps) {
             <div className="msg msg-assistant">
               <span className="msg-meta">Minimi</span>
               <div className="msg-bubble" style={{ color: "var(--muted)" }}>
-                Thinking...
+                Searching and thinking...
               </div>
             </div>
           )}
@@ -47,4 +41,3 @@ export function MessageList({ messages, loading, sending }: MessageListProps) {
     </div>
   );
 }
-

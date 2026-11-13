@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@minimi/shared": "*",
+    "@tavily/core": "^1.1.0",
     "openai": "^7.55.0"
   }
 }

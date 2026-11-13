@@ -1,3 +1,4 @@
+import { tavily, type TavilyClient } from "@tavily/core";
 import type { ChatCompletionTool } from "openai/resources/chat/completions";
 
 export interface WebSearchArgs {
@@ -12,16 +13,18 @@ export interface WebSearchResult {
   publishedAt?: string;
 }
 
-export type WebSearchExecutor = (
-  args: Required<WebSearchArgs>
-) => Promise<WebSearchResult[]>;
+export interface WebSearchExecutionResult {
+  query: string;
+  rawResponse: Record<string, unknown>;
+  sources: WebSearchResult[];
+}
 
 export const webSearchToolDefinition: ChatCompletionTool = {
   type: "function",
   function: {
     name: "web_search",
     description:
-      "Search the web for current, changing, or externally verifiable information (such as recent prices, releases, news, or live facts). Do not use for general knowledge.",
+      "Search the live web for current, changing, or externally verifiable information (such as recent prices, releases, news, or live facts). Do not use for common general knowledge.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -43,49 +46,36 @@ export const webSearchToolDefinition: ChatCompletionTool = {
   },
 };
 
-async function searchWithTavily(
-  apiKey: string,
-  query: string,
-  maxResults: number
-): Promise<WebSearchResult[]> {
-  const response = await fetch("https://api.tavily.com/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      max_results: maxResults,
-      search_depth: "basic",
-    }),
-  });
+let cachedTavily: TavilyClient | null = null;
 
-  if (!response.ok) {
-    throw new Error(`Tavily search failed with status ${response.status}`);
+function getTavilyClient(): TavilyClient {
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) {
+    throw new Error("TAVILY_API_KEY is not configured");
   }
+  if (!cachedTavily) {
+    cachedTavily = tavily({ apiKey });
+  }
+  return cachedTavily;
+}
 
-  const data = (await response.json()) as {
-    results?: Array<{
-      title?: string;
-      url?: string;
-      content?: string;
-      published_date?: string;
-    }>;
-  };
+export type TavilySearchFn = (
+  args: WebSearchArgs
+) => Promise<{
+  query: string;
+  rawResponse: Record<string, unknown>;
+  sources: WebSearchResult[];
+}>;
 
-  return (data.results ?? [])
-    .filter((item): item is { title?: string; url: string; content?: string; published_date?: string } => Boolean(item.url))
-    .map((item) => ({
-      title: item.title ?? item.url,
-      url: item.url,
-      snippet: item.content ?? "",
-      ...(item.published_date ? { publishedAt: item.published_date } : {}),
-    }));
+export interface ExecuteWebSearchOptions {
+  tavilyClient?: TavilyClient;
+  customSearchFn?: TavilySearchFn;
 }
 
 export async function executeWebSearch(
   args: WebSearchArgs,
-  customExecutor?: WebSearchExecutor
-): Promise<WebSearchResult[]> {
+  options?: ExecuteWebSearchOptions
+): Promise<WebSearchExecutionResult> {
   const query = args.query.trim();
   if (!query) {
     throw new Error("web_search query must not be empty");
@@ -93,17 +83,37 @@ export async function executeWebSearch(
 
   const maxResults = Math.min(Math.max(args.maxResults ?? 5, 1), 10);
 
-  if (customExecutor) {
-    return customExecutor({ query, maxResults });
+  if (options?.customSearchFn) {
+    return options.customSearchFn({ query, maxResults });
   }
 
-  const tavilyKey = process.env.TAVILY_API_KEY;
-  if (!tavilyKey) {
-    throw new Error(
-      "TAVILY_API_KEY is not configured"
-    );
-  }
+  const tavilyClient = options?.tavilyClient ?? getTavilyClient();
+  const raw = (await tavilyClient.search(query, {
+    maxResults,
+    searchDepth: "basic",
+  })) as Record<string, unknown>;
 
-  return searchWithTavily(tavilyKey, query, maxResults);
+  const results = (raw.results ?? []) as Array<{
+    title?: string;
+    url?: string;
+    content?: string;
+    publishedDate?: string;
+  }>;
+
+  const sources: WebSearchResult[] = results
+    .filter((item): item is { title?: string; url: string; content?: string; publishedDate?: string } =>
+      Boolean(item.url)
+    )
+    .map((item) => ({
+      title: item.title ?? item.url,
+      url: item.url,
+      snippet: item.content ?? "",
+      ...(item.publishedDate ? { publishedAt: item.publishedDate } : {}),
+    }));
+
+  return {
+    query,
+    rawResponse: raw,
+    sources,
+  };
 }
-

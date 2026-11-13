@@ -40,7 +40,7 @@ textarea {
 }
 
 .btn {
-  height: 30px;
+  height: 28px;
   padding: 0 10px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -74,89 +74,26 @@ textarea {
   opacity: 0.9;
 }
 
-.input {
-  height: 32px;
-  width: 100%;
-  padding: 0 10px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 13px;
-}
-
-.input:focus,
-.chat-textarea:focus {
-  outline: none;
-  border-color: #4b5263;
-}
-
-/* Auth Gate */
-.auth-wrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.auth-box {
-  width: 100%;
-  max-width: 340px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.auth-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.auth-sub {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: -6px;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.field label {
-  font-size: 12px;
-  color: var(--muted);
-}
-
 /* App Shell */
 .shell {
   height: 100vh;
   display: flex;
-  overflow: hidden;
-}
-
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
   flex-direction: column;
+  overflow: hidden;
+  max-width: 800px;
+  margin: 0 auto;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--bg);
 }
 
-.sidebar-head {
-  padding: 12px;
+.topbar {
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  background: var(--surface);
 }
 
 .brand {
@@ -165,70 +102,11 @@ textarea {
   letter-spacing: -0.01em;
 }
 
-.conv-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.conv-item {
-  width: 100%;
-  text-align: left;
-  padding: 7px 9px;
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conv-item:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.conv-item.active {
-  color: var(--text);
-  background: var(--bg);
-  border-color: var(--border);
-}
-
-.sidebar-empty {
-  padding: 12px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.sidebar-foot {
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.user-email {
-  font-size: 12px;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Main Chat */
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-height: 0;
   background: var(--bg);
 }
 
@@ -239,23 +117,21 @@ textarea {
 }
 
 .messages-inner {
-  max-width: 700px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
 .empty-state {
-  max-width: 700px;
-  margin: 12vh auto 0;
+  margin: 25vh auto 0;
+  text-align: center;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .empty-state h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -330,13 +206,11 @@ textarea {
 
 .composer-wrap {
   border-top: 1px solid var(--border);
-  padding: 12px 20px;
+  padding: 12px 16px;
   background: var(--bg);
 }
 
 .composer {
-  max-width: 700px;
-  margin: 0 auto;
   display: flex;
   align-items: flex-end;
   gap: 8px;
@@ -356,15 +230,13 @@ textarea {
   resize: none;
 }
 
-.error-banner {
-  max-width: 700px;
-  margin: 0 auto 8px;
-  font-size: 12px;
-  color: var(--danger);
+.chat-textarea:focus {
+  outline: none;
+  border-color: #4b5263;
 }
 
-@media (max-width: 700px) {
-  .sidebar {
-    width: 190px;
-  }
+.error-banner {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--danger);
 }

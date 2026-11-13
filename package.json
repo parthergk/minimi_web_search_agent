@@ -11,9 +11,9 @@
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev --workspace=@minimi/api\" \"npm run dev --workspace=@minimi/web\"",
     "dev:api": "npm run dev --workspace=@minimi/api",
     "dev:web": "npm run dev --workspace=@minimi/web",
-    "build:packages": "tsc -b packages/shared packages/db packages/agent",
+    "build:packages": "tsc -b packages/shared packages/agent",
     "build": "npm run build:packages && npm run build --workspace=@minimi/api && npm run build --workspace=@minimi/web",
-    "typecheck": "tsc -b packages/shared packages/db packages/agent apps/api && npm run typecheck --workspace=@minimi/web"
+    "typecheck": "tsc -b packages/shared packages/agent apps/api && npm run typecheck --workspace=@minimi/web"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
@@ -24,4 +24,3 @@
     "npm": ">=10.0.0"
   }
 }
-
