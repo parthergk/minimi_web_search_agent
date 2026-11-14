@@ -48,6 +48,11 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
       }
 
 
+      const agentHistory: ConversationTurnMessage[] = history.map((h) => ({
+        role: h.role,
+        content: h.content,
+      }));
+
       // Pre-Flight Memory Router:
       // Fetches recent turns, analyzes intent/temporal reference, queries Postgres by date or FTS,
       // and injects deduplicated historical snapshots into the agent system prompt.
@@ -64,7 +69,8 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
       // Run main LLM agent (Single Tool Constraint: only web_search tool is exposed)
       const result = await runAgent({
         query: trimmed,
-        memoryContext: memoryPrompt
+        history: agentHistory,
+        memoryContext: memoryPrompt,
       });
 
       // Non-Blocking Write Path:

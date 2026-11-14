@@ -134,15 +134,16 @@ export async function getMemoryContext(
 
   let historicalRecords: Message[] = [];
 
-  // 3. Retrieval: target_date lookup, with fallback to FTS
+  // 3. Retrieval: target_date lookup and/or keyword FTS
   if (analysis.target_date) {
     try {
-      historicalRecords = await db
+      const dateRecords = await db
         .select()
         .from(messages)
         .where(eq(messages.date, analysis.target_date))
         .orderBy(asc(messages.createdAt))
         .limit(10);
+      historicalRecords.push(...dateRecords);
     } catch (err) {
       console.error(
         `[getMemoryContext] Target date query failed for ${analysis.target_date}:`,
@@ -151,8 +152,8 @@ export async function getMemoryContext(
     }
   }
 
-  // Fallback to full-text search if no date was specified or no records matched target_date
-  if (historicalRecords.length === 0 && analysis.keywords.length > 0) {
+  // Query full-text search if no date matched or if keywords were identified
+  if ((historicalRecords.length === 0 || analysis.target_date === null) && analysis.keywords.length > 0) {
     const sanitizedTerms = analysis.keywords
       .flatMap((k) => k.split(/\s+/))
       .map((t) => t.replace(/[^a-zA-Z0-9]/g, "").trim())
@@ -172,7 +173,7 @@ export async function getMemoryContext(
           `
         );
 
-        historicalRecords = (ftsResult.rows as unknown as Array<{
+        const ftsRecords = (ftsResult.rows as unknown as Array<{
           id: number;
           date: string;
           created_at: Date | string;
@@ -187,6 +188,8 @@ export async function getMemoryContext(
           agentAnswer: String(r.agent_answer),
           topics: String(r.topics ?? ""),
         }));
+
+        historicalRecords.push(...ftsRecords);
       } catch (ftsErr) {
         // Fallback to plainto_tsquery if custom tsquery syntax fails
         try {
@@ -200,7 +203,7 @@ export async function getMemoryContext(
             `
           );
 
-          historicalRecords = (plainResult.rows as unknown as Array<{
+          const plainRecords = (plainResult.rows as unknown as Array<{
             id: number;
             date: string;
             created_at: Date | string;
@@ -215,6 +218,8 @@ export async function getMemoryContext(
             agentAnswer: String(r.agent_answer),
             topics: String(r.topics ?? ""),
           }));
+
+          historicalRecords.push(...plainRecords);
         } catch (plainErr) {
           console.error("[getMemoryContext] FTS fallback failed:", plainErr);
         }
